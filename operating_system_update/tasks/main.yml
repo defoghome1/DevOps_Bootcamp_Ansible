@@ -1,0 +1,29 @@
+---
+# tasks file for operating_system_update
+# tasks file for operating_system_update
+  - name: Hold sshpass
+    ansible.builtin.dpkg_selections:
+      name: sshpass
+      selection: hold
+      
+  - name: Upgrade
+    apt:
+      update_cache: yes
+      upgrade: yes
+      
+  - name: Check if a reboot is needed on server
+    register: reboot_required_file
+    stat: path=/var/run/reboot-required get_md5=no
+
+  - name: Reboot if updated
+    reboot:
+        connect_timeout: 5
+        reboot_timeout: 350
+        pre_reboot_delay: 3
+        post_reboot_delay: 40
+        test_command: uptime
+    when: reboot_required_file.stat.exists
+  
+  - name: Clean kernel
+    apt:
+      autoremove: true
